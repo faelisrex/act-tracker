@@ -1,26 +1,33 @@
 import unittest
 from unittest.mock import patch, mock_open
-import json
 import activity_tracker
 from datetime import datetime
+import os
 
 class TestActivityTracker(unittest.TestCase):
 
-    @patch('activity_tracker.open', new_callable=mock_open, read_data='{}')
+    @patch('builtins.open', new_callable=mock_open, read_data='{}')
     def test_load_activity_log(self, mock_file):
+        expected_log = {}
         log = activity_tracker.load_activity_log()
-        self.assertEqual(log, {})
-        mock_file.assert_called_with('activity_log.json', 'r')
+        self.assertEqual(log, expected_log)
+        mock_file.assert_called_with(os.path.expanduser('~/Documents/activity_log.json'), 'r')
 
-    @patch('activity_tracker.open', new_callable=mock_open)
+    @patch('builtins.open', new_callable=mock_open)
     def test_save_activity_log(self, mock_file):
-        log = {"test": {"time": 10, "timestamp": "2023-12-01T10:00:00"}}
+        log = {"test": "data"}
         activity_tracker.save_activity_log(log)
-        mock_file.assert_called_with('activity_log.json', 'w')
-        
-        # Combine all write calls into a single string
-        written_data = ''.join(call.args[0] for call in mock_file().write.mock_calls)
-        self.assertEqual(written_data, json.dumps(log, indent=4))
+        mock_file.assert_called_with(os.path.expanduser('~/Documents/activity_log.json'), 'w')
+        handle = mock_file()
+        handle.write.assert_has_calls([
+            unittest.mock.call('{'),
+            unittest.mock.call('\n    '),
+            unittest.mock.call('"test"'),
+            unittest.mock.call(': '),
+            unittest.mock.call('"data"'),
+            unittest.mock.call('\n'),
+            unittest.mock.call('}')
+        ])
 
     @patch('activity_tracker.load_activity_log', return_value={})
     @patch('activity_tracker.save_activity_log')
@@ -52,6 +59,56 @@ class TestActivityTracker(unittest.TestCase):
         
         self.assertEqual(log, expected_log)
         mock_save.assert_called_once()
+
+    @patch('activity_tracker.save_activity_log')
+    def test_delete_entry(self, mock_save):
+        log = {
+            "test": {
+                "time": 0,
+                "timestamp": "",
+                "subactivity": {
+                    "time": 15,
+                    "timestamp": ""
+                }
+            },
+            "test/subactivity": {
+                "time": 15,
+                "timestamp": ""
+            }
+        }
+        expected_log = {}
+
+        activity_tracker.delete_entry(log, "test")
+        
+        self.assertEqual(log, expected_log)
+        mock_save.assert_called_once()
+
+    @patch('activity_tracker.load_activity_log')
+    @patch('builtins.print')
+    @patch('builtins.input', return_value="test")
+    @patch('activity_tracker.save_activity_log')
+    def test_prompt_delete_entry(self, mock_save, mock_input, mock_print, mock_load_activity_log):
+        mock_load_activity_log.return_value = {
+            "test": {
+                "time": 0,
+                "timestamp": "",
+                "subactivity": {
+                    "time": 15,
+                    "timestamp": ""
+                }
+            },
+            "test/subactivity": {
+                "time": 15,
+                "timestamp": ""
+            }
+        }
+        expected_log = {}
+
+        activity_tracker.prompt_delete_entry()
+        
+        self.assertEqual(mock_load_activity_log.return_value, expected_log)
+        mock_save.assert_called_once()
+        mock_print.assert_any_call("Deleted entry 'test' and its subentries.")
 
     @patch('activity_tracker.load_activity_log')
     @patch('builtins.print')

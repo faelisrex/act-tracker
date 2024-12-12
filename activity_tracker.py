@@ -100,11 +100,28 @@ def add_time(category_path, time):
     
     save_activity_log(log)
 
+def delete_entry(log, entry_name):
+    if entry_name in log:
+        del log[entry_name]
+        for key in list(log.keys()):
+            if key.startswith(entry_name + '/'):
+                del log[key]
+        save_activity_log(log)
+        print(f"Deleted entry '{entry_name}' and its subentries.")
+    else:
+        print(f"Entry '{entry_name}' not found.")
+
+def prompt_delete_entry():
+    log = load_activity_log()
+    entry_name = input("Enter the name of the entry to delete: ")
+    delete_entry(log, entry_name)
+
 def main():
     parser = argparse.ArgumentParser(description="Activity Tracker")
     parser.add_argument('-t', '--timer', type=str, help='Start a timer for an activity')
     parser.add_argument('-a', '--add', type=str, nargs=2, help='Add time manually to an activity')
     parser.add_argument('-l', '--list', action='store_true', help='List all activities and categories')
+    parser.add_argument("--delete", action="store_true", help="Delete an activity entry")
     
     args = parser.parse_args()
     
@@ -118,6 +135,8 @@ def main():
     elif args.list:
         log = load_activity_log()
         print_activity_tree(log)
+    elif args.delete:
+        prompt_delete_entry()
     else:
         parser.print_help()
 
