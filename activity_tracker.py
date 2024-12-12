@@ -72,15 +72,29 @@ def print_activity_tree(log, indent=0):
             print(" " * indent + f"{key} ({time} minutes)")
             print_activity_tree(value, indent + 4)
 
-def add_time(activity_name, minutes):
-    try:
-        minutes = int(minutes)
-        if minutes < 0:
-            raise ValueError("Minutes cannot be negative.")
-        log_time(activity_name, minutes)
-        print(f"Added {minutes} minutes to {activity_name}.")
-    except ValueError as e:
-        print(f"Error: {e}")
+def add_time(category_path, time):
+    log = load_activity_log()
+    categories = category_path.split('/')
+    
+    # Convert time to integer
+    time = int(time)
+    
+    # Initialize the current level in the log
+    current_level = log
+    
+    # Iterate through the categories and update the time
+    for i in range(len(categories)):
+        category = categories[i]
+        if category not in current_level:
+            current_level[category] = {"time": 0}
+        
+        # Add time to the current category
+        current_level[category]["time"] += time
+        
+        # Move to the next level
+        current_level = current_level[category]
+    
+    save_activity_log(log)
 
 def main():
     parser = argparse.ArgumentParser(description="Activity Tracker")
@@ -91,12 +105,17 @@ def main():
     args = parser.parse_args()
     
     if args.timer:
+        start_time = time.time()
         start_timer(args.timer)
     elif args.add:
         activity_name, minutes = args.add
         add_time(activity_name, minutes)
+        print(f"Added {minutes} minutes to {activity_name}")
     elif args.list:
-        print_activities()
+        log = load_activity_log()
+        print_activity_tree(log)
+    else:
+        parser.print_help()
 
 if __name__ == "__main__":
     main()

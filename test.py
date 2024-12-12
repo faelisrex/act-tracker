@@ -30,6 +30,29 @@ class TestActivityTracker(unittest.TestCase):
         log = mock_load.return_value
         self.assertEqual(log["test"]["activity"]["time"], 30)
 
+    @patch('activity_tracker.load_activity_log', return_value={})
+    @patch('activity_tracker.save_activity_log')
+    def test_add_time_ripples_upwards(self, mock_save, mock_load):
+        log = {}
+        mock_load.return_value = log
+        
+        activity_tracker.add_time("linux/unixhndbk/chapter-1", 50)
+        
+        expected_log = {
+            "linux": {
+                "time": 50,
+                "unixhndbk": {
+                    "time": 50,
+                    "chapter-1": {
+                        "time": 50
+                    }
+                }
+            }
+        }
+        
+        self.assertEqual(log, expected_log)
+        mock_save.assert_called_once()
+
     @patch('activity_tracker.load_activity_log')
     @patch('builtins.print')
     def test_print_activities(self, mock_print, mock_load_activity_log):
