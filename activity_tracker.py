@@ -4,14 +4,18 @@ import signal
 import sys
 from datetime import datetime
 import argparse
+import os
 
 # Spinner frames
 frames = ["⣾ ", "⣽ ", "⣻ ", "⢿ ", "⡿ ", "⣟ ", "⣯ ", "⣷ "]
 
+# Path to the activity log file
+activity_log_path = os.path.expanduser('~/Documents/activity_log.json')
+
 # Load or initialize the activity log
 def load_activity_log():
     try:
-        with open('activity_log.json', 'r') as file:
+        with open(activity_log_path, 'r') as file:
             return json.load(file)
     except FileNotFoundError:
         return {}
@@ -21,7 +25,7 @@ def load_activity_log():
 
 def save_activity_log(log):
     try:
-        with open('activity_log.json', 'w') as file:
+        with open(activity_log_path, 'w') as file:
             json.dump(log, file, indent=4)
     except IOError as e:
         print(f"Error: Unable to save activity log. {e}")
