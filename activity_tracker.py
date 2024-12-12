@@ -47,7 +47,7 @@ def start_timer(activity_name):
         for frame in frames:
             sys.stdout.write(f"\r{frame} ")
             sys.stdout.flush()
-            time.sleep(0.1)
+            time.sleep(0.25)
 
 def log_time(activity_name, minutes):
     log = load_activity_log()
