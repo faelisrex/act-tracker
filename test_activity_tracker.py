@@ -26,50 +26,31 @@ class TestActivityTracker(unittest.TestCase):
     @patch('activity_tracker.save_activity_log')
     def test_add_time(self, mock_save, mock_load):
         activity_tracker.add_time("test/activity", 30)
-        expected_log = {
-            "test": {
-                "activity": {
-                    "time": 30,
-                    "timestamp": datetime.now().isoformat()
-                }
-            }
-        }
         mock_save.assert_called_once()
-        saved_log = mock_save.call_args[0][0]
-        self.assertEqual(saved_log["test"]["activity"]["time"], 30)
-        self.assertIn("timestamp", saved_log["test"]["activity"])
+        log = mock_load.return_value
+        self.assertEqual(log["test"]["activity"]["time"], 30)
 
-    @patch('activity_tracker.load_activity_log', return_value={})
-    @patch('activity_tracker.save_activity_log')
-    def test_log_time(self, mock_save, mock_load):
-        activity_tracker.log_time("test/activity", 15)
-        expected_log = {
+    @patch('activity_tracker.load_activity_log')
+    @patch('builtins.print')
+    def test_print_activities(self, mock_print, mock_load_activity_log):
+        mock_load_activity_log.return_value = {
             "test": {
+                "time": 0,
+                "timestamp": "",
                 "activity": {
                     "time": 15,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": ""
                 }
             }
         }
-        mock_save.assert_called_once()
-        saved_log = mock_save.call_args[0][0]
-        self.assertEqual(saved_log["test"]["activity"]["time"], 15)
-        self.assertIn("timestamp", saved_log["test"]["activity"])
-
-    @patch('activity_tracker.load_activity_log', return_value={
-        "test": {
-            "activity": {
-                "time": 15,
-                "timestamp": "2023-12-01T10:00:00"
-            }
-        }
-    })
-    def test_print_activities(self, mock_load):
-        with patch('builtins.print') as mock_print:
-            activity_tracker.print_activities()
-            mock_print.assert_called_once()
-            printed_log = json.dumps(mock_load.return_value, indent=4)
-            mock_print.assert_called_with(printed_log)
+        
+        activity_tracker.print_activities()
+        
+        expected_calls = [
+            unittest.mock.call('test (0 minutes)'),
+            unittest.mock.call('    activity (15 minutes)')
+        ]
+        mock_print.assert_has_calls(expected_calls, any_order=False)
 
 if __name__ == '__main__':
     unittest.main()

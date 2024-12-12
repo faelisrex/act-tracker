@@ -6,7 +6,7 @@ from datetime import datetime
 import argparse
 
 # Spinner frames
-frames = ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]
+frames = ["⣾ ", "⣽ ", "⣻ ", "⢿ ", "⡿ ", "⣟ ", "⣯ ", "⣷ "]
 
 # Load or initialize the activity log
 def load_activity_log():
@@ -39,22 +39,11 @@ def start_timer(activity_name):
         sys.exit(0)
     
     signal.signal(signal.SIGINT, signal_handler)
-    
-    i = 0
     while True:
-        print(frames[i % len(frames)], end='\r')
-        time.sleep(0.1)
-        i += 1
-
-def add_time(activity_name, minutes):
-    try:
-        minutes = int(minutes)
-        if minutes < 0:
-            raise ValueError("Minutes cannot be negative.")
-        log_time(activity_name, minutes)
-        print(f"Added {minutes} minutes to {activity_name}.")
-    except ValueError as e:
-        print(f"Error: {e}")
+        for frame in frames:
+            sys.stdout.write(f"\r{frame} ")
+            sys.stdout.flush()
+            time.sleep(0.1)
 
 def log_time(activity_name, minutes):
     log = load_activity_log()
@@ -74,7 +63,24 @@ def log_time(activity_name, minutes):
 
 def print_activities():
     log = load_activity_log()
-    print(json.dumps(log, indent=4))
+    print_activity_tree(log)
+
+def print_activity_tree(log, indent=0):
+    for key, value in log.items():
+        if isinstance(value, dict):
+            time = value.get("time", 0)
+            print(" " * indent + f"{key} ({time} minutes)")
+            print_activity_tree(value, indent + 4)
+
+def add_time(activity_name, minutes):
+    try:
+        minutes = int(minutes)
+        if minutes < 0:
+            raise ValueError("Minutes cannot be negative.")
+        log_time(activity_name, minutes)
+        print(f"Added {minutes} minutes to {activity_name}.")
+    except ValueError as e:
+        print(f"Error: {e}")
 
 def main():
     parser = argparse.ArgumentParser(description="Activity Tracker")
@@ -91,8 +97,6 @@ def main():
         add_time(activity_name, minutes)
     elif args.list:
         print_activities()
-    else:
-        parser.print_help()
 
 if __name__ == "__main__":
     main()
