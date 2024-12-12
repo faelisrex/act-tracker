@@ -52,16 +52,23 @@ def start_timer(activity_name):
 def log_time(activity_name, minutes):
     log = load_activity_log()
     categories = activity_name.split('/')
-    current = log
-    
-    for category in categories:
-        if category not in current:
-            current[category] = {"time": 0, "timestamp": ""}
-        current = current[category]
-    
-    current["time"] += minutes
-    if current["timestamp"] == "":
-        current["timestamp"] = datetime.now().isoformat()
+    current_level = log
+
+    # Iterate through the categories and update the time
+    for i in range(len(categories)):
+        category = categories[i]
+        if category not in current_level:
+            current_level[category] = {"time": 0, "timestamp": ""}
+        
+        # Add time to the current category
+        current_level[category]["time"] += minutes
+        
+        # Move to the next level
+        current_level = current_level[category]
+
+    # Update the timestamp for the last category
+    if current_level["timestamp"] == "":
+        current_level["timestamp"] = datetime.now().isoformat()
     
     save_activity_log(log)
 
