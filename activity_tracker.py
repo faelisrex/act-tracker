@@ -100,21 +100,49 @@ def add_time(category_path, time):
     
     save_activity_log(log)
 
-def delete_entry(log, entry_name):
-    if entry_name in log:
-        del log[entry_name]
-        for key in list(log.keys()):
-            if key.startswith(entry_name + '/'):
-                del log[key]
-        save_activity_log(log)
-        print(f"Deleted entry '{entry_name}' and its subentries.")
+def delete_entry(log, entry_path):
+    parts = entry_path.split('/')
+    current = log
+    stack = []
+
+    for part in parts[:-1]:
+        if part in current:
+            stack.append((current, part))
+            current = current[part]
+        else:
+            print(f"Entry '{entry_path}' not found.")
+            return
+
+    if parts[-1] in current:
+        del current[parts[-1]]
+        print(f"Entry '{entry_path}' deleted.")
     else:
-        print(f"Entry '{entry_name}' not found.")
+        print(f"Entry '{entry_path}' not found.")
+
+    # Clean up any empty parent entries
+    while stack:
+        parent, part = stack.pop()
+        if not parent[part]:
+            del parent[part]
+        else:
+            break
+
+    # Clean up any empty nested dictionaries
+    def clean_empty_entries(d):
+        keys_to_delete = [k for k, v in d.items() if isinstance(v, dict) and not v]
+        for k in keys_to_delete:
+            del d[k]
+        for v in d.values():
+            if isinstance(v, dict):
+                clean_empty_entries(v)
+
+    clean_empty_entries(log)
 
 def prompt_delete_entry():
     log = load_activity_log()
-    entry_name = input("Enter the name of the entry to delete: ")
-    delete_entry(log, entry_name)
+    entry_path = input("Enter the name of the entry to delete: ")
+    delete_entry(log, entry_path)
+    save_activity_log(log)
 
 def main():
     parser = argparse.ArgumentParser(description="Activity Tracker")

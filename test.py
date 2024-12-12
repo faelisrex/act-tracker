@@ -83,6 +83,15 @@ class TestActivityTracker(unittest.TestCase):
         self.assertEqual(log, expected_log)
         mock_save.assert_called_once()
 
+    @patch('activity_tracker.load_activity_log', return_value={'test': {'subactivity': {'time': 15, 'timestamp': ''}}})
+    @patch('activity_tracker.save_activity_log')
+    def test_delete_entry(self, mock_save_activity_log, mock_load_activity_log):
+        log = mock_load_activity_log.return_value
+        activity_tracker.delete_entry(log, 'test/subactivity')
+        expected_log = {'test': {}}
+        self.assertEqual(log, expected_log)
+        mock_save_activity_log.assert_called_once_with(expected_log)
+
     @patch('activity_tracker.load_activity_log')
     @patch('builtins.print')
     @patch('builtins.input', return_value="test")
@@ -109,6 +118,15 @@ class TestActivityTracker(unittest.TestCase):
         self.assertEqual(mock_load_activity_log.return_value, expected_log)
         mock_save.assert_called_once()
         mock_print.assert_any_call("Deleted entry 'test' and its subentries.")
+
+    @patch('activity_tracker.load_activity_log', return_value={'test': {'subactivity': {'time': 15, 'timestamp': ''}}})
+    @patch('activity_tracker.save_activity_log')
+    @patch('builtins.input', return_value='test/subactivity')
+    def test_prompt_delete_entry(self, mock_input, mock_save_activity_log, mock_load_activity_log):
+        activity_tracker.prompt_delete_entry()
+        expected_log = {'test': {}}
+        self.assertEqual(mock_load_activity_log.return_value, expected_log)
+        mock_save_activity_log.assert_called_once_with(expected_log)
 
     @patch('activity_tracker.load_activity_log')
     @patch('builtins.print')
